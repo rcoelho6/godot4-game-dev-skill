@@ -140,6 +140,12 @@ Regras:
 
 ---
 
+## Arquitetura Técnica
+
+Para entender o funcionamento interno da skill, os padrões de design orientados a eventos, o funcionamento das máscaras de bits de colisão e o pathfinding, leia o documento técnico: `references/technical-architecture.md`.
+
+---
+
 ## Versionamento
 
 - `.gitignore`: pasta `.godot/` e binários de exportação
