@@ -29,6 +29,16 @@ No top-down, o eixo Y representa profundidade visual. Para objetos se sobreporem
 - Todos os objetos no mesmo nível de Y Sort devem ter o `position.y` como base de ordenação
 - A origem do sprite deve estar na **base do objeto** (não no centro)
 
+## Escala do Player em Mapas Reais
+
+Quando o mapa é uma imagem real (foto aérea, mapa desenhado), use a fórmula abaixo para calcular a escala correta do personagem:
+
+```
+escala = (largura_rua_px * fator_ocupacao) / frame_width_do_sprite
+```
+
+Meça `largura_rua_px` diretamente no editor Godot usando a régua ou o inspetor. Use `fator_ocupacao = 0.6` como ponto de partida para personagens a pé. Ver `references/view-and-assets.md` para detalhes e exemplo completo.
+
 ## Movimento 8 Direções
 
 O personagem se move livremente em X e Y. Ver `references/physics.md` para o script completo.

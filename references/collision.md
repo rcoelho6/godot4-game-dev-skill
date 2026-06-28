@@ -133,6 +133,78 @@ func _physics_process(_delta: float) -> void:
 
 ---
 
+## Layers por Tipo de Superfície (jogos com áreas distintas)
+
+A configuração padrão da skill usa `layer 1 = world` como obstáculo genérico. Quando o jogo precisa distinguir **tipos de superfície** (prédio, parque, água, calçada), reorganize as layers para que cada tipo tenha sua própria camada.
+
+**Exemplo para jogo de cidade (GameDeli-style):**
+
+| Bit | Nome | Comportamento no player |
+|---|---|---|
+| 1 | `sidewalk` | Livre passagem (chão normal) |
+| 2 | `player` | Corpo do jogador |
+| 3 | `building` | Bloqueia passagem, dano leve ao colidir |
+| 4 | `park` | Livre passagem, efeito visual |
+| 5 | `water` | Bloqueia passagem, game over |
+| 6 | `pickup` | Item coletável (Area2D) |
+| 7 | `trigger` | Zona de evento (Area2D) |
+
+O player deve ter sua `collision_mask` ajustada para detectar cada tipo:
+
+```gdscript
+const LAYER_PLAYER:   int = 1 << 1
+const LAYER_BUILDING: int = 1 << 2
+const LAYER_WATER:    int = 1 << 4
+const LAYER_PICKUP:   int = 1 << 5
+const LAYER_TRIGGER:  int = 1 << 6
+
+func _ready() -> void:
+    collision_layer = LAYER_PLAYER
+    collision_mask  = LAYER_BUILDING | LAYER_WATER | LAYER_PICKUP | LAYER_TRIGGER
+```
+
+> Superfícies por onde o player **passa livremente** (calçada, parque) não precisam estar na mask. Apenas o que **bloqueia** ou **dispara efeito** deve ser detectado.
+
+---
+
+## Dano por Tipo de Colisão com `get_meta`
+
+Quando diferentes tipos de obstáculo causam efeitos distintos (dano leve em prédio, game over em água), use **metadata** nos nós de colisão para tipar o comportamento sem criar classes separadas.
+
+### Configurando metadata no nó (editor ou script)
+
+No inspetor do `StaticBody2D`, vá em **Node > Metadata** e adicione:
+- Chave: `collision_type` | Tipo: `String` | Valor: `"building"` (ou `"water"`, `"park"`, etc.)
+
+Ou via script ao gerar colisões proceduralmente:
+```gdscript
+var body := StaticBody2D.new()
+body.set_meta("collision_type", "building")
+```
+
+### Lendo metadata no player
+
+```gdscript
+func _physics_process(_delta: float) -> void:
+    move_and_slide()
+    for i in get_slide_collision_count():
+        var col      := get_slide_collision(i)
+        var collider := col.get_collider()
+        if not collider.has_meta("collision_type"):
+            continue
+        match collider.get_meta("collision_type"):
+            "building":
+                take_damage(5)       # dano leve
+            "water":
+                GameManager.trigger_game_over()  # game over
+            "wall":
+                pass                 # apenas bloqueia, sem efeito
+```
+
+> Esta abordagem é preferível a verificar `is_in_group()` para tipos de superfície porque metadata é uma propriedade do nó (não requer registro em grupos) e funciona bem com colisões geradas proceduralmente.
+
+---
+
 ## Checklist de Colisão
 
 - [ ] Layers nomeadas em Project Settings

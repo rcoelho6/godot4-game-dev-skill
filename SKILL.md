@@ -99,6 +99,8 @@ Consulte `references/map-assembly.md` para o guia completo de TileMap, camadas e
 
 Consulte `references/collision.md` para a tabela completa de layers e configuração de cada objeto.
 
+Para mapas sem TileMap (imagem estática), consulte `references/collision-procedural.md` para gerar colisões por script a partir de uma grade.
+
 **Layers padrão recomendadas:**
 
 | Layer | Nome | Quem usa |
