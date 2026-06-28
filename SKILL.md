@@ -1,150 +1,157 @@
 ---
 name: godot4-game-dev
-description: "Desenvolvimento de jogos 2D com Godot Engine 4 e GDScript. Use para criar projetos Godot 4, implementar mecânicas 2D com câmera cenital (top-down), estruturar cenas e scripts GDScript, exportar para PC/Android/iOS, e aplicar boas práticas de organização de projeto."
+description: "Desenvolvimento de jogos 2D com Godot Engine 4 e GDScript. Use para criar projetos Godot 4, escolher tipo de jogo (top-down, plataforma, etc.), configurar view e assets, implementar física desacoplada por tipo de objeto, montar mapas com TileMap, definir sistema de colisão por layers, e exportar para PC/Android/iOS."
 ---
 
 # Godot 4 Game Dev
 
-## Configuração do Projeto
+## Passo 1 — Escolha o Tipo de Jogo
 
-### Estrutura de diretórios recomendada
+Antes de qualquer coisa, defina o tipo. Cada tipo tem configurações específicas de câmera, física e assets.
+
+| Tipo | Câmera | Física | Referência |
+|---|---|---|---|
+| **Top-Down** | Cenital, segue o player | Sem gravidade, movimento 8 direções | `references/type-topdown.md` |
+| **Plataforma** | Lateral, segue o player | Com gravidade, pulo | *(em breve)* |
+| **Puzzle** | Fixa ou por sala | Estática ou cinemática | *(em breve)* |
+
+Leia a referência do tipo escolhido antes de continuar.
+
+---
+
+## Passo 2 — Configuração do Projeto
+
+### Estrutura de diretórios
 
 ```
 project.godot
-/assets/         → sprites, sons, fontes
-/scenes/         → cenas .tscn organizadas por contexto (player/, ui/, enemies/, world/)
+/assets/
+  /sprites/      → personagens, objetos, veículos (PNG, spritesheet)
+  /tilesets/     → tiles do mapa (PNG)
+  /audio/        → sons e músicas
+  /fonts/        → fontes .ttf
+/scenes/
+  /world/        → mapas e fases (.tscn)
+  /player/       → cena do jogador
+  /enemies/      → cenas de inimigos
+  /vehicles/     → cenas de veículos
+  /objects/      → itens, coletáveis, obstáculos
+  /ui/           → HUD, menus
 /scripts/        → scripts .gd reutilizáveis
-/autoloads/      → singletons (GameManager.gd, AudioManager.gd)
-/resources/      → recursos .tres/.res (itens, configurações)
+/autoloads/      → GameManager.gd, AudioManager.gd
+/resources/      → dados .tres/.res (stats, itens)
 ```
 
-### project.godot essencial (2D top-down)
+### Project Settings essenciais
 
-- **Renderer:** Forward+ ou Mobile (Mobile para melhor desempenho em Android/iOS)
-- **Viewport:** 1280×720, stretch mode `canvas_items`, aspect `keep`
-- **Física:** Layer names definidos em Project Settings > Layer Names > 2D Physics
+- **Renderer:** `Mobile` (melhor para Android/iOS; funciona bem no PC)
+- **Viewport:** `1280×720`, Stretch Mode `canvas_items`, Aspect `keep`
+- **Gravity:** `Project Settings > Physics > 2D > Default Gravity` — defina `0` para top-down
+- **Physics Layers:** configure em `Project Settings > Layer Names > 2D Physics` (ver `references/collision.md`)
 
-## Câmera Cenital (Top-Down)
+---
 
-```gdscript
-# Camera2D seguindo o player com suavização
-extends Camera2D
+## Passo 3 — View e Assets
 
-@export var smoothing_speed: float = 5.0
+Consulte `references/view-and-assets.md` para especificações completas de resolução, tamanho de sprites, tiles e organização de spritesheets.
 
-func _process(delta: float) -> void:
-    global_position = global_position.lerp(get_parent().global_position, smoothing_speed * delta)
-```
+**Resumo rápido:**
 
-Configurações recomendadas no Camera2D:
-- `Position Smoothing > Enabled`: true (alternativa ao script acima)
-- `Limit`: defina os limites do mapa para evitar câmera fora dos limites
+| Elemento | Tamanho recomendado | Formato |
+|---|---|---|
+| Tile do mapa | 16×16 ou 32×32 px | PNG |
+| Personagem | 32×32 ou 48×48 px | PNG (spritesheet) |
+| Veículo | 48×48 ou 64×64 px | PNG (spritesheet) |
+| Objeto/item | 16×16 ou 32×32 px | PNG |
+| UI / ícones | 32×32 px mínimo | PNG |
+
+---
+
+## Passo 4 — Física por Tipo de Objeto
+
+Cada tipo de objeto usa um nó e um script de movimento **independente**. Nenhum objeto conhece o outro diretamente — comunicação via signals.
+
+Consulte `references/physics.md` para scripts completos de cada tipo.
+
+| Objeto | Nó Godot | Movimento |
+|---|---|---|
+| Personagem jogável | `CharacterBody2D` | Controlado por input |
+| Inimigo / NPC | `CharacterBody2D` | Controlado por IA/Pathfinding |
+| Veículo | `CharacterBody2D` | Aceleração, frenagem, esterçamento |
+| Objeto estático | `StaticBody2D` | Imóvel |
+| Objeto físico solto | `RigidBody2D` | Simulação física automática |
+| Zona / gatilho | `Area2D` | Sem movimento, detecta entrada/saída |
+
+---
+
+## Passo 5 — Montagem do Mapa
+
+Consulte `references/map-assembly.md` para o guia completo de TileMap, camadas e integração de objetos.
+
+**Resumo:**
+- Mapa base: `TileMapLayer` com tileset configurado
+- Objetos colocados como cenas instanciadas sobre o mapa
+- Câmera com `Limit` definido pelos limites do mapa
+
+---
+
+## Passo 6 — Sistema de Colisão
+
+Consulte `references/collision.md` para a tabela completa de layers e configuração de cada objeto.
+
+**Layers padrão recomendadas:**
+
+| Layer | Nome | Quem usa |
+|---|---|---|
+| 1 | `world` | Paredes, chão, obstáculos estáticos |
+| 2 | `player` | Corpo do jogador |
+| 3 | `enemy` | Corpo dos inimigos |
+| 4 | `vehicle` | Corpo dos veículos |
+| 5 | `projectile` | Projéteis, balas |
+| 6 | `pickup` | Itens coletáveis |
+| 7 | `trigger` | Zonas de evento (Area2D) |
+
+---
 
 ## GDScript — Padrões
 
-### Ordem de membros (obrigatória pelo style guide)
+Ordem obrigatória de membros em todo script:
 
 ```gdscript
 class_name NomeClasse
 extends Node2D
 
 # 1. Signals
-signal morreu
-
-# 2. Enums e constantes
-enum Estado { IDLE, MOVENDO, ATACANDO }
-const VELOCIDADE_MAX: float = 200.0
-
-# 3. Variáveis exportadas
-@export var vida: int = 100
-
+# 2. Enums / Constantes
+# 3. @export
 # 4. Variáveis públicas
-var estado_atual: Estado = Estado.IDLE
-
-# 5. Variáveis privadas
-var _velocidade: Vector2 = Vector2.ZERO
-
-# 6. Nodes referenciados
-@onready var sprite: Sprite2D = $Sprite2D
-@onready var animacao: AnimationPlayer = $AnimationPlayer
-
-# 7. Funções built-in
-func _ready() -> void:
-    pass
-
-func _process(delta: float) -> void:
-    pass
-
+# 5. Variáveis privadas (_prefixo)
+# 6. @onready
+# 7. _ready / _process / _physics_process
 # 8. Funções públicas
-func receber_dano(quantidade: int) -> void:
-    vida -= quantidade
-    if vida <= 0:
-        morreu.emit()
-
-# 9. Funções privadas
-func _mover(delta: float) -> void:
-    pass
+# 9. Funções privadas (_prefixo)
 ```
 
-### Regras importantes
+Regras:
+- **Sempre tipagem estática:** `var x: float`, `func foo() -> void`
+- Usar `%NomeNode` (Scene Unique Names) em vez de caminhos longos
+- Signals para comunicação entre cenas; nunca referência direta entre cenas distintas
+- Autoloads apenas para estado verdadeiramente global
 
-- **Sempre usar tipagem estática** (`var x: float`, `func foo() -> void`)
-- Usar `%NomeNode` (Scene Unique Names) em vez de `$Pai/Filho/Neto`
-- Preferir signals para comunicação entre nós; evitar referências diretas entre cenas
-- Autoloads apenas para dados verdadeiramente globais (pontuação, áudio, save)
+---
 
-## Nós Essenciais para Top-Down 2D
+## Versionamento
 
-| Propósito | Nó recomendado |
-|---|---|
-| Personagem jogável | `CharacterBody2D` |
-| Inimigos / NPCs | `CharacterBody2D` ou `RigidBody2D` |
-| Cenário estático | `StaticBody2D` + `CollisionShape2D` |
-| Tilemap | `TileMapLayer` (Godot 4.3+) ou `TileMap` |
-| Câmera | `Camera2D` (filho do player) |
-| Detecção de área | `Area2D` + `CollisionShape2D` |
-| HUD / UI | `CanvasLayer` > `Control` |
+- `.gitignore`: pasta `.godot/` e binários de exportação
+- Versionar: `project.godot`, `.tscn`, `.gd`, `.tres`, `.import`, assets
+- Ver `references/git-godot.md`
 
-## Movimento Top-Down (CharacterBody2D)
+## Exportação
 
-```gdscript
-extends CharacterBody2D
+Ver `references/export-guide.md`. Use sempre **GDScript** para suporte total a Android e iOS.
 
-const SPEED: float = 150.0
-
-func _physics_process(delta: float) -> void:
-    var direction := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-    velocity = direction * SPEED
-    move_and_slide()
-```
-
-Para mobile, substitua `Input.get_vector` por um joystick virtual (ver `references/mobile-input.md`).
-
-## Versionamento com Git
-
-- Adicionar ao `.gitignore`: `.godot/`, builds de exportação
-- Commitar sempre: `project.godot`, todos os `.tscn`, `.gd`, `.tres`, `.import`
-- Usar branches por feature: `feature/sistema-de-combate`, `feature/mapa-fase-1`
-- Ver `references/git-godot.md` para o `.gitignore` completo recomendado
-
-## Exportação Multiplataforma
-
-Consulte `references/export-guide.md` para o passo a passo completo.
-
-**Resumo rápido:**
-
-| Plataforma | Requisito principal | Formato final |
+| Plataforma | Requisito | Saída |
 |---|---|---|
-| PC (Windows/Linux/macOS) | Export Templates instalados | `.exe` / binário |
-| Android | OpenJDK 17 + Android SDK + keystore | `.apk` ou `.aab` |
-| iOS | macOS + Xcode + Apple Developer account | Projeto Xcode |
-
-> **Importante:** Use **GDScript** (não C#) para garantir suporte total a Android e iOS sem limitações experimentais.
-
-## Boas Práticas Gerais
-
-- Uma cena por entidade lógica (player, inimigo, item)
-- Preferir `Resource` customizados para dados (stats de inimigos, itens) em vez de dicionários soltos
-- Usar `PhysicsLayers` para separar colisões (player, inimigos, projéteis, mundo)
-- Testar no mobile cedo — resolução e toque mudam o design
-- Renderer **Mobile** no Project Settings reduz consumo de bateria em dispositivos móveis
+| PC | Export Templates | `.exe` / binário |
+| Android | OpenJDK 17 + Android SDK | `.apk` / `.aab` |
+| iOS | macOS + Xcode | Projeto Xcode |
